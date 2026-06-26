@@ -8,7 +8,7 @@ import google.generativeai as genai
 # ----------------------------
 load_dotenv()
 genai.configure(api_key=os.getenv("AQ.Ab8RN6KaZMGsrWUcd9gha5CMdwa60P0_fIgm_47GFRxlitsy4w"))
-model = genai.GenerativeModel("models/gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ----------------------------
 # Page Config
@@ -20,9 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ----------------------------
-# Custom CSS
-# ----------------------------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -182,14 +179,6 @@ html, body, [data-testid="stAppViewContainer"] {
     margin: 1.5rem 0;
 }
 
-.card {
-    background: #11131f;
-    border: 1px solid #1a1d30;
-    border-radius: 14px;
-    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
-    height: 100%;
-}
-
 .card-label {
     font-size: 11.5px;
     font-weight: 700;
@@ -259,10 +248,6 @@ html, body, [data-testid="stAppViewContainer"] {
     background: linear-gradient(135deg, #7c73ff 0%, #5f56f5 100%) !important;
 }
 
-.stButton > button:active {
-    transform: translateY(0px) !important;
-}
-
 .stWarning {
     background: rgba(251, 191, 36, 0.08) !important;
     border: 1px solid rgba(251, 191, 36, 0.2) !important;
@@ -274,7 +259,7 @@ html, body, [data-testid="stAppViewContainer"] {
     background: #11131f;
     border: 1px solid #1a1d30;
     border-radius: 16px;
-    padding: 2rem 2rem 1.5rem 2rem;
+    padding: 1.5rem 2rem;
     margin-top: 1.5rem;
     position: relative;
     overflow: hidden;
@@ -288,15 +273,6 @@ html, body, [data-testid="stAppViewContainer"] {
     background: linear-gradient(90deg, #6c63ff, #4ade80, #6c63ff);
 }
 
-.result-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1.25rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #1a1d30;
-}
-
 .result-badge {
     display: inline-flex;
     align-items: center;
@@ -308,6 +284,7 @@ html, body, [data-testid="stAppViewContainer"] {
     font-size: 12px;
     font-weight: 600;
     color: #4ade80;
+    margin-bottom: 1.25rem;
 }
 
 [data-testid="column"] { padding: 0 0.5rem !important; }
@@ -327,9 +304,6 @@ html, body, [data-testid="stAppViewContainer"] {
     text-transform: uppercase;
     color: #4b5280;
     margin-bottom: 0.4rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -347,17 +321,14 @@ with st.sidebar:
 
     st.markdown('<div class="sidebar-label">Supported Errors</div>', unsafe_allow_html=True)
 
-    errors = [
-        "NameError", "TypeError", "SyntaxError", "IndexError",
-        "ModuleNotFoundError", "FileNotFoundError", "AttributeError", "ValueError",
-    ]
-    for err in errors:
+    for err in ["NameError", "TypeError", "SyntaxError", "IndexError",
+                "ModuleNotFoundError", "FileNotFoundError", "AttributeError", "ValueError"]:
         st.markdown(f'<div class="error-chip"><span class="dot"></span>{err}</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-label" style="margin-top:1.5rem;">Powered by</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="tech-stack">
-        <div class="tech-item"><span class="tech-dot"></span>Google Gemini 2.0 Flash</div>
+        <div class="tech-item"><span class="tech-dot"></span>Google Gemini 1.5 Flash</div>
         <div class="tech-item"><span class="tech-dot"></span>Python 3.x</div>
         <div class="tech-item"><span class="tech-dot"></span>Streamlit</div>
     </div>
@@ -418,8 +389,7 @@ if analyze:
     if code.strip() == "" or error.strip() == "":
         st.warning("⚠️  Please provide both your code and the error message before analyzing.")
     else:
-        prompt = f"""
-You are an expert programming tutor helping a beginner understand and fix their code.
+        prompt = f"""You are an expert programming tutor helping a beginner understand and fix their code.
 
 Programming language: {language}
 
@@ -446,22 +416,22 @@ The full corrected code in a code block.
 ## 💡 Tips to Avoid This
 2–3 practical habits or rules to avoid this error in the future.
 
-Keep the tone encouraging and beginner-friendly. Use simple analogies where helpful.
-"""
+Keep the tone encouraging and beginner-friendly."""
+
         st.markdown("""
         <div class="result-card">
-            <div class="result-header">
-                <div class="result-badge">✓ Analysis Complete</div>
-            </div>
+            <div class="result-badge">✓ Analysis Complete</div>
         </div>
         """, unsafe_allow_html=True)
 
-        with st.spinner("Analyzing your code..."):
-            response = model.generate_content(prompt, stream=True)
-
         output = st.empty()
         full_text = ""
+
+        response = model.generate_content(prompt, stream=True)
         for chunk in response:
-            if chunk.text:
-                full_text += chunk.text
-                output.markdown(full_text)
+            try:
+                if chunk.text:
+                    full_text += chunk.text
+                    output.markdown(full_text)
+            except Exception:
+                pass
