@@ -1,14 +1,13 @@
 import streamlit as st
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai
+from groq import Groq
 
 # ----------------------------
 # Load API Key
 # ----------------------------
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash-lite")
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ----------------------------
 # Page Config
@@ -328,7 +327,7 @@ with st.sidebar:
     st.markdown('<div class="sidebar-label" style="margin-top:1.5rem;">Powered by</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="tech-stack">
-        <div class="tech-item"><span class="tech-dot"></span>Google Gemini 1.5 Flash</div>
+        <div class="tech-item"><span class="tech-dot"></span>Groq — LLaMA 3.3 70B</div>
         <div class="tech-item"><span class="tech-dot"></span>Python 3.x</div>
         <div class="tech-item"><span class="tech-dot"></span>Streamlit</div>
     </div>
@@ -427,11 +426,15 @@ Keep the tone encouraging and beginner-friendly."""
         output = st.empty()
         full_text = ""
 
-        response = model.generate_content(prompt, stream=True)
-        for chunk in response:
-            try:
-                if chunk.text:
-                    full_text += chunk.text
-                    output.markdown(full_text)
-            except Exception:
-                pass
+        stream = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            stream=True,
+            max_tokens=1024,
+        )
+
+        for chunk in stream:
+            text = chunk.choices[0].delta.content
+            if text:
+                full_text += text
+                output.markdown(full_text)
